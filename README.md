@@ -27,6 +27,14 @@ Build a Windows executable:
 GOOS=windows GOARCH=amd64 go build -o updater.exe .
 ```
 
+Build release binaries for Windows, macOS, and Linux:
+
+```sh
+sh scripts/build.sh
+```
+
+The generated binaries are written to `dist/`.
+
 ## Selection Controls
 
 The selector shows only the supported top-level archive folders:
@@ -43,16 +51,18 @@ Default selected folders:
 Controls:
 
 - `↑` / `↓`: move the cursor
-- `1-9`: select or unselect a visible item
 - `Space`: select or unselect the highlighted item
-- `Shift+1-9`: expand or collapse a top-level folder
-- `→`: expand the highlighted top-level folder
+- `→`: expand or collapse the highlighted top-level folder
 - `←`: collapse the expanded top-level folder
-- `Enter` or `0`: continue with the current selection
+- `N`: next page, when pagination is shown
+- `P`: previous page, when pagination is shown
+- `Enter`: continue with the current selection
 - `Esc`: when a folder is open, return to the root view
 - `Esc` twice on the root view: close the app
 
 Only top-level folders can be expanded. When a top-level folder is expanded, the selector shows its direct files and folders.
+
+After the updater finishes, it waits for a keypress before closing. If no key is pressed, it closes automatically after 60 seconds.
 
 ## Generated Files
 

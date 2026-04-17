@@ -38,21 +38,6 @@ type item struct {
 	checked  bool
 }
 
-type pageAction struct {
-	label string
-	item  int
-	kind  actionKind
-}
-
-type actionKind int
-
-const (
-	actionToggle actionKind = iota
-	actionPrevPage
-	actionNextPage
-	actionConfirm
-)
-
 func SelectFilesForMods(root string) ([]string, error) {
 	items, roots, err := buildTree(root)
 	if err != nil {
@@ -89,11 +74,9 @@ func SelectFilesForMods(root string) ([]string, error) {
 			cursor = 0
 		}
 
-		actions := printSelection(items, visible, pages, page, cursor, confirmExit)
+		printSelection(items, visible, pages, page, cursor, confirmExit)
 
-		fmt.Print("Ваш выбор: ")
 		key, err := readKey()
-		fmt.Println()
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +106,7 @@ func SelectFilesForMods(root string) ([]string, error) {
 			if pageItemsCount > 0 {
 				index := visible[current[0]+cursor]
 				if canExpand(items[index]) {
-					items[index].expanded = true
+					items[index].expanded = !items[index].expanded
 					page = 0
 					cursor = 0
 				}
@@ -154,36 +137,22 @@ func SelectFilesForMods(root string) ([]string, error) {
 				setCheckedRecursive(items, index, state(items, index) != 1)
 			}
 			continue
-		}
-
-		action, ok := actions[key]
-		if !ok {
-			fmt.Println("Не понял выбор. Нажмите 1-9, Shift+1-9 для раскрытия верхней папки или 0 для продолжения.")
-			continue
-		}
-
-		switch action.kind {
-		case actionConfirm:
-			return selectedFiles(items), nil
-		case actionPrevPage:
-			page--
-			cursor = 0
-		case actionNextPage:
-			page++
-			cursor = 0
-		case actionToggle:
-			if isShiftKey(key) {
-				if !canExpand(items[action.item]) {
-					fmt.Println("Раскрывать можно только папки верхнего уровня.")
-					continue
-				}
-				items[action.item].expanded = !items[action.item].expanded
-				page = 0
-				cursor = 0
+		case 'p', 'P':
+			if page == 0 {
 				continue
 			}
-
-			setCheckedRecursive(items, action.item, state(items, action.item) != 1)
+			page--
+			cursor = 0
+			continue
+		case 'n', 'N':
+			if page >= len(pages)-1 {
+				continue
+			}
+			page++
+			cursor = 0
+			continue
+		default:
+			continue
 		}
 	}
 }
@@ -428,19 +397,15 @@ func checkbox(state int) string {
 	}
 }
 
-func printSelection(items []item, visible []int, pages [][2]int, page, cursor int, confirmExit bool) map[rune]pageAction {
-	actions := map[rune]pageAction{
-		'0': {label: "Продолжить", kind: actionConfirm},
-	}
+func printSelection(items []item, visible []int, pages [][2]int, page, cursor int, confirmExit bool) {
 	current := pages[page]
 	pageItems := visible[current[0]:current[1]]
 	hasPrev := page > 0
 	hasNext := page < len(pages)-1
-	itemKeys := availableItemKeys(hasPrev, hasNext)
 
 	fmt.Println()
 	fmt.Println("Выберите файлы и папки, которые попадут в новую папку mods.")
-	fmt.Println("1-9/Space - отметить/снять, Shift+1-9 - раскрыть/свернуть верхнюю папку, стрелки - навигация, Enter/0 - продолжить.")
+	fmt.Println("↑/↓ - навигация, Space - отметить/снять, → - раскрыть/свернуть, ←/Esc - назад, Enter - продолжить.")
 	if len(pages) > 1 {
 		fmt.Printf("Страница %d из %d.\n", page+1, len(pages))
 	}
@@ -450,7 +415,6 @@ func printSelection(items []item, visible []int, pages [][2]int, page, cursor in
 	fmt.Println()
 
 	for number, index := range pageItems {
-		key := itemKeys[number]
 		item := items[index]
 		indent := strings.Repeat("   ", depth(items, index))
 		pointer := " "
@@ -464,9 +428,6 @@ func printSelection(items []item, visible []int, pages [][2]int, page, cursor in
 			} else {
 				marker = ">"
 			}
-			for _, shiftKey := range shiftedKeys(key) {
-				actions[shiftKey] = pageAction{item: index, kind: actionToggle}
-			}
 		}
 
 		note := ""
@@ -474,65 +435,19 @@ func printSelection(items []item, visible []int, pages [][2]int, page, cursor in
 			note = " (все выбранные файлы из папки)"
 		}
 
-		fmt.Printf("%s %c. %s%s %s %s%s\n", pointer, key, indent, checkbox(state(items, index)), marker, item.name, note)
-		actions[key] = pageAction{item: index, kind: actionToggle}
+		fmt.Printf("%s %s%s %s %s%s\n", pointer, indent, checkbox(state(items, index)), marker, item.name, note)
 	}
 
 	if hasPrev {
-		fmt.Println("  8. Назад")
-		actions['8'] = pageAction{label: "Назад", kind: actionPrevPage}
+		fmt.Println("  P. Назад")
 	}
 	if hasNext {
-		fmt.Println("  9. Далее")
-		actions['9'] = pageAction{label: "Далее", kind: actionNextPage}
+		fmt.Println("  N. Далее")
 	}
-	fmt.Println("  Enter/0. Продолжить")
+
 	fmt.Println()
-
-	return actions
-}
-
-func availableItemKeys(hasPrev, hasNext bool) []rune {
-	keys := make([]rune, 0, maxItemsPerPage)
-	for _, key := range []rune{'1', '2', '3', '4', '5', '6', '7', '8', '9'} {
-		if hasPrev && key == '8' {
-			continue
-		}
-		if hasNext && key == '9' {
-			continue
-		}
-		keys = append(keys, key)
-	}
-	return keys
-}
-
-func shiftedKeys(key rune) []rune {
-	switch key {
-	case '1':
-		return []rune{'!'}
-	case '2':
-		return []rune{'@', '"'}
-	case '3':
-		return []rune{'#', '№'}
-	case '4':
-		return []rune{'$', ';'}
-	case '5':
-		return []rune{'%'}
-	case '6':
-		return []rune{'^', ':'}
-	case '7':
-		return []rune{'&', '?'}
-	case '8':
-		return []rune{'*'}
-	case '9':
-		return []rune{'('}
-	default:
-		return nil
-	}
-}
-
-func isShiftKey(key rune) bool {
-	return strings.ContainsRune("!@#$%^&*(\"№;:?", key)
+	fmt.Println("  Enter - Подтвердить выбор и заменить моды.")
+	fmt.Println()
 }
 
 func selectedFiles(items []item) []string {

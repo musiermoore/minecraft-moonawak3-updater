@@ -12,6 +12,7 @@ moonawak3-minecraft
 *.exe
 *.test
 *.out
+dist/
 
 # App runtime files
 mods/
