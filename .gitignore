@@ -1,3 +1,20 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+
+# Go build outputs
 main
-updater.exe
-.idea
+moonawak3-minecraft
+*.exe
+*.test
+*.out
+
+# App runtime files
+mods/
+temp_mods/
+temp_selected_mods/
+mods.zip
