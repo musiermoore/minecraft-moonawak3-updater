@@ -33,7 +33,23 @@ Build release binaries for Windows, macOS, and Linux:
 sh scripts/build.sh
 ```
 
+For a new release tag, pass the version into the build:
+
+```sh
+VERSION=v0.0.2 sh scripts/build.sh
+```
+
 The generated binaries are written to `dist/`.
+
+Upload these files to the matching GitHub Release:
+
+- `moonawak3-minecraft-windows-amd64.exe`
+- `moonawak3-minecraft-macos-arm64`
+- `moonawak3-minecraft-macos-amd64`
+- `moonawak3-minecraft-linux-amd64`
+- `checksums.txt`
+
+The app checks GitHub Releases in `musiermoore/minecraft-moonawak3-updater` and compares the latest release tag with its built-in version.
 
 ## Selection Controls
 

@@ -12,11 +12,15 @@ import (
 	"moonawak3-minecraft/internal/fsutil"
 	"moonawak3-minecraft/internal/mods"
 	"moonawak3-minecraft/internal/selector"
+	"moonawak3-minecraft/internal/updater"
+	"moonawak3-minecraft/internal/version"
 	"moonawak3-minecraft/internal/yandexdisk"
 )
 
 const (
 	publicKey       = "https://disk.yandex.ru/d/eCzV6zSDSG-l_A"
+	githubOwner     = "musiermoore"
+	githubRepo      = "minecraft-moonawak3-updater"
 	archivePath     = "mods.zip"
 	tempArchiveDir  = "temp_mods"
 	tempSelectedDir = "temp_selected_mods"
@@ -24,7 +28,20 @@ const (
 )
 
 func main() {
+	if updater.HandleApplyUpdate(os.Args) {
+		return
+	}
+
 	defer console.PauseBeforeExit()
+
+	updated, err := updater.CheckAndInstall(version.Current, githubOwner, githubRepo)
+	if err != nil {
+		fmt.Println("Проверка обновлений не удалась:", err)
+	}
+	if updated {
+		console.DisablePauseBeforeExit()
+		return
+	}
 
 	fmt.Println("Подготовка к скачиванию...")
 
