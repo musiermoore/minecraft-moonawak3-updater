@@ -461,5 +461,5 @@ func selectedFiles(items []item) []string {
 }
 
 func clearScreen() {
-	fmt.Print("\033[H\033[2J")
+	platformClearScreen()
 }
