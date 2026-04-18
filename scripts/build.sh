@@ -3,7 +3,17 @@ set -eu
 
 APP_NAME="moonawak3-minecraft"
 DIST_DIR="dist"
-VERSION="${VERSION:-v0.0.1}"
+
+if [ "${VERSION:-}" = "" ]; then
+	printf "Enter full version tag, for example v0.0.2: "
+	read -r VERSION
+fi
+
+if [ "$VERSION" = "" ]; then
+	echo "VERSION is required."
+	exit 1
+fi
+
 LDFLAGS="-X moonawak3-minecraft/internal/version.Current=$VERSION"
 
 rm -rf "$DIST_DIR"
