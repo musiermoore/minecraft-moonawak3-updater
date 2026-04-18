@@ -244,6 +244,7 @@ func installWithHelper(newPath string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	configureUpdateHelperCommand(cmd)
 
 	return cmd.Start()
 }
@@ -269,7 +270,7 @@ func applyUpdate(newPath, targetPath string, parentPID int) error {
 			continue
 		}
 
-		return exec.Command(targetPath).Start()
+		return startUpdatedApp(targetPath)
 	}
 
 	return lastErr
